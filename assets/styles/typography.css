@@ -1,0 +1,63 @@
+p, div{
+    @apply font-garet text-lg leading-8;
+}
+.box-label {
+    @apply text-xl font-semibold text-neutral-400;
+}
+
+
+.page-label {
+    position: relative;
+    .header {
+		-webkit-text-stroke: 2px rgba(var(--color-tertiary),.3);  /* Border thickness and color */
+        @apply text-8xl font-extrabold text-foreground/25 uppercase font-junegull;
+    }
+    .subtitle {
+        @apply text-4xl font-semibold text-background capitalize font-junegull;
+        top: 35px;
+        left: 20px;
+        position: absolute;
+    }
+}
+
+.section-label{	
+    @apply text-sm font-bold font-comforta uppercase tracking-widest text-primary;
+}	
+.section-header{	
+    @apply text-4xl font-extrabold font-junegull text-background leading-tight;
+}
+
+.title1{
+    @apply text-7xl font-extrabold text-background uppercase font-junegull;
+    text-shadow: 0 0 2px black;
+}
+
+.title2{
+    @apply text-6xl font-extrabold text-background uppercase font-junegull;
+    text-shadow: 0 0 2px black;
+}
+
+.title3{
+    @apply text-5xl font-extrabold text-background uppercase font-junegull;
+    text-shadow: 0 0 2px black;
+}
+
+.title4{
+    @apply text-4xl font-extrabold text-background uppercase font-junegull;
+    text-shadow: 0 0 2px black;
+}
+
+.header1{
+    @apply text-4xl font-extrabold text-background uppercase font-junegull;
+    text-shadow: 0 0 2px black;
+}
+.header2{
+    @apply text-2xl font-extrabold text-black uppercase font-comforta;
+    text-shadow: 0 0 2px black;
+}
+.header3{
+    @apply text-xl font-extrabold text-foreground uppercase font-comforta;
+}
+.header4{
+    @apply text-xl font-extrabold text-background font-comforta;
+}

@@ -1,0 +1,19 @@
+@tailwind base;
+
+.theme-light {
+    --color-primary: 166, 152, 52;
+    --color-secondary: 66, 152, 52;
+    --color-tri: 66, 152, 52;
+    --color-fore: 0, 0, 0;
+    --color-back: 236, 234, 237;
+    --color-overlay: 235, 233, 236;
+}
+
+.theme-dark {
+    --prim: 66, 152, 52;
+    --sec: 66, 152, 52;
+    --tri: 66, 152, 52;
+    --fore-color: 0, 0, 0;
+    --back-color: 55, 255, 255;
+    --overlay: 255, 0, 255;
+}

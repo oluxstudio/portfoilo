@@ -1,0 +1,95 @@
+
+@font-face {
+  font-family: 'geosans';
+  font-style: normal;
+  font-weight: 400;
+  src: url(../fonts/geosans/GeosansLight.ttf);
+}
+@font-face {
+  font-family: 'adam';
+  font-style: normal;
+  font-weight: 800;
+  src: url(../fonts/adam/Adam-Bold.ttf);
+}
+
+@font-face {
+  font-family: 'adam-med';
+  font-style: normal;
+  font-weight: 800;
+  src: url(../fonts/adam/Adam-Medium.ttf);
+}
+
+@font-face {
+  font-family: 'avigea';
+  font-style: normal;
+  font-weight: 400;
+  src: url(../fonts/avigea/Avigea.ttf);
+}
+
+@font-face {
+  font-family: 'garet';
+  font-style: normal;
+  font-weight: 400;
+  src: url(../fonts/garet/Garet-Book.ttf);
+}
+
+@font-face {
+  font-family: 'holen';
+  font-style: normal;
+  font-weight: 400;
+  src: url(../fonts/holen/HolenVintage.otf);
+}
+@font-face {
+  font-family: 'caviar';
+  font-style: normal;
+  font-weight: 400;
+  src: url(../fonts/caviar/CaviarDreams.ttf);
+}
+@font-face {
+  font-family: 'wonderland';
+  font-style: normal;
+  font-weight: 400;
+  src: url(../fonts/wonderland/WONDERLANDPRO-Regular.ttf);
+}
+@font-face {
+  font-family: 'comforta';
+  font-style: normal;
+  font-weight: 400;
+  src: url(../fonts/comforta/Comfortaa-Regular.ttf);
+}
+@font-face {
+  font-family: 'heavitas';
+  font-style: normal;
+  font-weight: 900;
+  src: url(../fonts/heavitas/Heavitas.ttf);
+}
+@font-face {
+  font-family: 'akira';
+  font-style: normal;
+  font-weight: 900;
+  src: url(../fonts/akira/AkiraExpandedDemo.otf);
+}
+@font-face {
+  font-family: 'robotobold';
+  font-style: bold;
+  font-weight: 900;
+  src: url(../fonts/roboto/Roboto-Bold.ttf);
+}
+@font-face {
+  font-family: 'roboto';
+  font-style: bold;
+  font-weight: 900;
+  src: url(../fonts/roboto/Roboto-Black.ttf);
+}
+@font-face {
+  font-family: 'agressive';
+  font-style: bold;
+  font-weight: 900;
+  src: url(../fonts/agressive/AGRESSIVE.otf);
+}
+@font-face {
+  font-family: 'junegull';
+  font-style: bold;
+  font-weight: 900;
+  src: url(../fonts/junegull/junegull.otf);
+}

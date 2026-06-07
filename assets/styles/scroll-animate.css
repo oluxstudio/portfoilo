@@ -1,0 +1,23 @@
+/* ─────────────────────────────────────────────
+   Scroll-animate directive styles
+   ───────────────────────────────────────────── */
+
+/* Base: every animated element starts hidden and transitions in */
+.scroll-animate {
+    transition: opacity .7s ease, transform 1.7s ease;
+    transition-delay: var(--anim-delay, 0ms);
+    will-change: opacity, transform;
+}
+
+/* ── Entry states (hidden) ── */
+.sa--slide-up    { opacity: 0; transform: translateY(96px);  }
+.sa--slide-left  { opacity: 0; transform: translateX(-94px); }
+.sa--slide-right { opacity: 0; transform: translateX(94px);  }
+.sa--fade        { opacity: 0; transform: scale(0.97);       }
+.sa--zoom        { opacity: 0; transform: scale(0.88);       }
+
+/* ── Visible state — resets all transforms ── */
+.sa--visible {
+    opacity: 1 !important;
+    transform: translate(0, 0) scale(1) !important;
+}

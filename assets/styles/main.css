@@ -1,0 +1,59 @@
+
+@import "bootstrap-icons/font/bootstrap-icons.css";
+@import "./typography.css";
+@import "./app.css";
+@import "./font.css";
+@import "./buttons/button.scss";
+@import "./buttons/glow.css";
+@import "./scroll-animate.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme variables — outside @layer so they win over Tailwind base ──────── */
+
+:root,
+.theme-light {
+    --color-primary:    227, 135, 4;
+    --color-secondary:  247, 115, 21;
+    --color-tertiary:   94, 56, 2;
+    --color-fore:       248, 245, 242;
+    --color-back:       18, 15, 20;
+    --color-text:    	40, 40, 40;
+    --color-alttext:   	240, 240, 240;
+    --color-overlay:    235, 225, 215;
+    --color-overlay1:   210, 200, 190;
+    --color-quaternary: 233, 144, 16;
+    --color-penta:      251, 191, 36;
+    --hero-min-height:  600px;
+    --video-min-height: 600px;
+}
+
+.theme-dark {
+    --color-primary:    79, 175, 8;
+    --color-secondary:  108, 233, 8;
+    --color-tertiary:   33, 74, 4;
+    --color-fore:       228, 241, 199;
+    --color-back:       18, 22, 14;
+    --color-text:    	40, 40, 40;
+    --color-alttext:   	240, 240, 240;
+    --color-overlay:    230, 240, 218;
+    --color-overlay1:   200, 215, 185;
+    --color-quaternary: 80, 180, 10;
+    --color-penta:      160, 230, 80;
+}
+
+.theme-blue {
+    --color-primary:    77, 10, 177;
+    --color-secondary:  125, 45, 243;
+    --color-tertiary:   90, 61, 133;
+    --color-fore:       30, 27, 36;
+    --color-back:       213, 212, 215;
+    --color-overlay:    20, 30, 70;
+    --color-alttext:   	240, 240, 240;
+    --color-text:    	240, 240, 240;
+    --color-overlay1:   20, 30, 70;
+    --color-quaternary: 37, 99, 235;
+    --color-penta:      147, 197, 253;
+}

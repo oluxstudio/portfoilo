@@ -1,0 +1,18 @@
+// ─── Colours (mirror of CSS custom properties in main.css) ──────────────────
+// Use these in .scss rules and <style lang="scss"> blocks.
+// The CSS custom properties (--color-*) are kept in main.css for Tailwind.
+$color-primary:   rgb(231, 103, 18);
+$color-secondary: rgb(66, 152, 52);
+$color-tertiary:  rgb(34, 11, 21);
+$color-fore:      rgb(0, 0, 0);
+$color-back:      rgb(236, 234, 237);
+$color-overlay:   rgb(249, 238, 255);
+
+// ─── Layout ──────────────────────────────────────────────────────────────────
+$hero-min-height:  600px;
+$video-min-height: 600px;
+
+// ─── Button defaults ─────────────────────────────────────────────────────────
+$background:    #fafbff;
+$button-width:  120px;
+$border-radius: 5px;
