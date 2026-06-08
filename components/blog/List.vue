@@ -5,7 +5,8 @@ div.blog-list
         a.blog-list__back(href="/")
             i.bi.bi-arrow-left
             span Back to site
-        span.blog-list__logo Olux Studio
+        span.blog-page__logo.w-20
+            HeaderLogo2
         span.blog-list__spacer
 
     //- Blog layout (hero cards + grid + sidebar)
@@ -25,7 +26,7 @@ onMounted(() => initTheme())
     color: rgba(var(--color-fore));
 
     &__header {
-        @apply grid items-center px-6 py-4 sticky top-0 z-50;
+        @apply flex justify-between items-center px-6 py-4 sticky top-0 z-50;
         grid-template-columns: 1fr auto 1fr;
         background-color: rgba(var(--color-back), 0.92);
         backdrop-filter: blur(10px);

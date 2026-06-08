@@ -12,8 +12,8 @@ div.fit-content.pb-4(class="lg:pb-14 -mt-[98px]")
                 class="text-5xl lg:text-8xl text-color-hero font-junegull")
 
             p.text-2xl.font-wonderland.text-white(class="lg:text-3xl") I make the complex simple
-            button.mt-8
-                ButtonsOther901(label="Let's Get Started")
+            button.mt-8(@click.prevent="goToContact")
+                ButtonsOther901(label="Let's Get Started" href="#contact")
 
         div(class="flex flex-col lg:flex lg:flex-row gap-6")
           div(class="mob-tile lg:h-tile" v-for="item in _footerContent" :key="item.label")
@@ -22,19 +22,27 @@ div.fit-content.pb-4(class="lg:pb-14 -mt-[98px]")
 </template>
 
 <script setup lang="ts">
+const menuStore = useMenuStore()
+const { scrollToSection } = useScrollToSection()
+
+const goToContact = () => {
+	menuStore.isActive('/contact')
+	scrollToSection('contact')
+}
+
 const _footerContent = [
-  {
-    label: 'Email',
-    content: 'contact@oluxstudio.com',
-  },
-  {
-    label: 'Phone',
-    content: '+44-78-2768-5736',
-  },
-  {
-    label: 'Location',
-    content: 'Blackburn, Lancashire, UK',
-  },
+	{
+		label: 'Email',
+		content: 'contact@oluxstudio.com',
+	},
+	{
+		label: 'Phone',
+		content: '+44-78-2768-5736',
+	},
+	{
+		label: 'Location',
+		content: 'Blackburn, Lancashire, UK',
+	},
 ]
 </script>
 

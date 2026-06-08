@@ -12,7 +12,7 @@ const reload = () => {
 
 <style scoped lang="scss">
 .img{
-    @apply block w-[10rem] lg:w-44;
+    @apply flex justify-center w-[8rem] lg:w-44;
     img{
         width: 100%;
         height: 100%;

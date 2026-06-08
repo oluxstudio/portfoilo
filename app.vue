@@ -16,9 +16,12 @@ div.bg-foreground.text-maintext(:class="themeClass")
     div.flex.sticky.top-0.z-50.justify-between.items-center.transition.duration-700.ease-in-out.p-4(ref="navBar")
       div.nav-box
         HeaderLogo
-        IconList.icon.text-black.w-14.pr-6(code="menu" class="lg:hidden" @click="menuStore.toggleMenu")
+        IconList.icon.text-maintext.w-14.pr-6(code="menu" class="lg:hidden" @click="menuStore.toggleMenu")
         HeaderNav.hidden(class="lg:flex")
         HeaderApps.hidden(class="lg:flex")
+
+    //- Mobile slide-in menu
+    MobileMenu
 
     div#Pages
       div#Home.h-dvh.text-zinc-200.z-20.relative
@@ -64,8 +67,11 @@ const navBarScroll = () => {
 }
 
 function scrollToPage() {
-	const name = route.path === '/' ? 'Home' : route.path.slice(1)
-	const el = document.getElementById(name)
+	if (route.path === '/') {
+		window.scrollTo({ top: 0, behavior: 'smooth' })
+		return
+	}
+	const el = document.getElementById(route.path.slice(1))
 	if (el) el.scrollIntoView()
 }
 
