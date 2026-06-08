@@ -6,7 +6,7 @@ div.blog-page
             i.bi.bi-arrow-left
             span Back to blog
         span.blog-page__logo
-            HeaderLogo
+            HeaderLogo2
         span.blog-page__spacer
 
     //- Not found
@@ -238,7 +238,7 @@ watchEffect(() => {
     &__header {
         @apply grid items-center px-6 py-4 sticky top-0 z-10;
         grid-template-columns: 1fr auto 1fr;
-        background-color: rgba(var(--color-tertiary), 0.92);
+        background-color: rgba(var(--color-back), 0.92);
         backdrop-filter: blur(10px);
         border-bottom: 1px solid rgba(var(--color-fore), 0.1);
 
@@ -266,7 +266,7 @@ watchEffect(() => {
         // Mobile: shrink the logo so the header fits on one row
         @media (max-width: 640px) {
             :deep(svg), :deep(img) { @apply h-12 w-auto; }
-            @apply text-base;
+            @apply text-base w-[8rem];
         }
     }
     &__spacer {
