@@ -1,7 +1,7 @@
 <template lang="pug">
 div
     a.img(href="/" @click.prevent="reload")
-        img(src="~/assets/images/systems/logo.svg", alt="Olux Studio")
+        img(src="~/assets/images/systems/logo.webp", alt="Olux Studio")
 </template>
 
 <script setup lang="ts">

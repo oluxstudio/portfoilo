@@ -5,7 +5,7 @@ div
             IconList.text-black(code="menu")
     ul.flex.gap-2
         li.nav-item.font-extrabold.tracking-wider.text-lg.text-foreground.font-adam.uppercase
-            a(href="http://localhost:8000/" target="_blank") CMS App
+            a(href="https://cms.oluxstudio.com" target="_blank") CMS App
 </template>
 
 <script setup lang="ts">
