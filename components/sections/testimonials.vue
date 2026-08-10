@@ -6,9 +6,9 @@ div
 
     //- Heading
     div.mt-20.text-center.max-w-4xl.mx-auto
-        span.section-label Client testimonials
-        h2.section-header.mt-3 Trusted by businesses across the UK
-        p.section-sub.mt-4 Don't just take our word for it — here's what our clients have to say about working with Olux Studio.
+        span.section-label {{ label }}
+        h2.section-header.mt-3 {{ header }}
+        p.section-sub.mt-4 {{ intro }}
 
     //- Stats strip
     div.stats-strip.mt-14
@@ -44,13 +44,13 @@ div
 
     //- CTA
     div.testimonial-cta.mt-20
-        p.section-header Ready to join them?
+        p.section-header {{ ctaHeading }}
         a(href="#contact")
-            button.btn Start your project
+            button.btn {{ ctaButton }}
 </template>
 
 <script setup lang="ts">
-const stats: Stats[] = [
+const fallbackStats = [
 	{ value: '50+', label: 'Projects completed' },
 	{ value: '30+', label: 'Happy clients' },
 	{ value: '4.9★', label: 'Average rating' },
@@ -67,7 +67,7 @@ interface Testimonial {
 	rating: number
 }
 
-const testimonials: Testimonial[] = [
+const fallbackTestimonials: Testimonial[] = [
 	{
 		id: 1,
 		quote: 'Olux Studio delivered our new website ahead of schedule and it looked better than anything we could have imagined. The attention to detail and communication throughout was exceptional.',
@@ -106,6 +106,26 @@ const testimonials: Testimonial[] = [
 	},
 ]
 
+const { collection, attr } = useCmsContent()
+const intro = attr('testimonials_intro', 'Don\'t just take our word for it — here\'s what our clients have to say about working with Olux Studio.')
+const label = attr('testimonials_label', 'Client testimonials')
+const header = attr('testimonials_header', 'Trusted by businesses across the UK')
+const ctaHeading = attr('testimonials_cta_heading', 'Ready to join them?')
+const ctaButton = attr('testimonials_cta_button', 'Start your project')
+const stats = collection('testimonial-stats', fallbackStats, d => ({
+	value: String(d.value ?? ''),
+	label: String(d.label ?? ''),
+}))
+const testimonials = collection<Testimonial>('testimonials', fallbackTestimonials, (d, item) => ({
+	id: item.id,
+	quote: String(d.quote ?? ''),
+	name: String(d.name ?? ''),
+	role: String(d.role ?? ''),
+	company: String(d.company ?? ''),
+	initials: String(d.initials || String(d.name ?? '').split(' ').map(w => w[0]).join('').toUpperCase()),
+	rating: Math.min(5, Math.max(1, Number(d.rating ?? 5))),
+}))
+
 const showCarousel = ref(false)
 const startIndex = ref(0)
 const sectionRef = ref<HTMLElement | null>(null)
@@ -119,11 +139,11 @@ const truncate = (text: string, maxWords = 10) => {
 
 const orderedReviews = computed(() => {
 	const idx = startIndex.value
-	return [...testimonials.slice(idx), ...testimonials.slice(0, idx)]
+	return [...testimonials.value.slice(idx), ...testimonials.value.slice(0, idx)]
 })
 
 const openCarousel = (t: Testimonial) => {
-	startIndex.value = testimonials.findIndex(r => r.id === t.id)
+	startIndex.value = testimonials.value.findIndex(r => r.id === t.id)
 	showCarousel.value = true
 	scrollTo(sectionRef)
 }
@@ -152,7 +172,7 @@ const closeCarousel = () => {
         @apply text-3xl font-extrabold font-junegull text-primary;
     }
     &__label {
-        @apply text-xs text-background/50 mt-1 font-comforta uppercase tracking-wide text-center;
+        @apply text-xs text-white/70  mt-1 font-comforta uppercase tracking-wide text-center;
     }
 }
 

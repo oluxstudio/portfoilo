@@ -51,6 +51,7 @@ div.blog-page
                 form.comments__form(@submit.prevent="addComment")
                     input.comments__input(v-model="form.name" type="text" placeholder="Your name" required)
                     textarea.comments__input.comments__input--area(v-model="form.text" rows="3" placeholder="Write a comment…" required)
+                    div.comments__error(v-if="commentError") {{ commentError }}
                     button.comments__submit(type="submit")
                         i.bi.bi-send
                         |  Post comment
@@ -108,15 +109,16 @@ div.blog-page
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ id: number }>()
+// id: numeric string for the built-in fallback posts, CMS slug otherwise
+const props = defineProps<{ id: string }>()
 const { toggleTheme } = useTheme()
 
 interface Post {
-	id: number; image: string; category: string; date: string
+	id: number | string; image: string; category: string; date: string
 	title: string; author: string; body: string[]
 }
 
-const posts: Post[] = [
+const fallbackPosts: Post[] = [
 	{ id: 1, image: '/images/blogs/blog1.png', category: 'Design', date: '12 May 2025', author: 'Oluwaseun', title: 'Why Custom Websites Outperform Templates Every Time', body: ['Templates promise speed, but they trade your brand’s uniqueness for convenience — businesses that invest in bespoke design consistently see stronger engagement and better conversion rates.', 'When you use a template, you start with someone else’s idea of what your site should look like. You inherit their assumptions, their layout decisions, and their structural limitations. Custom websites start with you — your brand, your goals, your users.', 'The data backs this up. Studies consistently show that purpose-built sites outperform template sites on key metrics including time on page, bounce rate, and conversion.', 'At Olux Studio, every project begins with discovery — understanding your business, your audience, and what success looks like for you.'] },
 	{ id: 2, image: '/images/blogs/blog2.png', category: 'UI/UX', date: '8 May 2025', author: 'Oluwaseun', title: '10 UI Design Trends Shaping the Web in 2025', body: ['From glassmorphism to AI-assisted layouts, the visual web is evolving fast. We break down the ten trends worth paying attention to this year.', 'Bold typography is back — large, expressive type is being used as a primary visual element rather than just a content carrier.', 'Dark mode is now table stakes. Users expect it, and designers are embracing the creative freedom it offers.', 'Micro-interactions are becoming more sophisticated. Done well, they make an interface feel alive and responsive.'] },
 	{ id: 3, image: '/images/blogs/blog3.png', category: 'Development', date: '3 May 2025', author: 'Oluwaseun', title: 'How Core Web Vitals Directly Affect Your Google Rankings', body: ['Speed, interactivity, and visual stability are now official ranking signals. Here’s what that means for your site and how to improve your scores.', 'Google’s Core Web Vitals measure three things: Largest Contentful Paint, Interaction to Next Paint, and Cumulative Layout Shift.', 'A poor score doesn’t just affect user experience — it directly impacts your position in search results.', 'The good news is that most issues are fixable with the right technical approach.'] },
@@ -132,7 +134,60 @@ const posts: Post[] = [
 	{ id: 13, image: '/images/blogs/blog13.png', category: 'Business', date: '24 Feb 2025', author: 'Oluwaseun', title: 'When to Rebuild vs When to Redesign Your Website', body: ['Knowing the difference can save you significant time and money.', 'A redesign changes the look and feel while keeping the structure intact.', 'A rebuild starts from scratch when technical debt is limiting you.', 'The only way to know which you need is an honest technical audit.'] },
 ]
 
-const post = computed(() => posts.find(p => p.id === props.id))
+const { posts: cmsPosts } = useCmsContent()
+const { public: { cmsBase, cmsSite } } = useRuntimeConfig()
+
+// CMS posts carry no category — recover it from the fallback data by title.
+const categoryByTitle = new Map(fallbackPosts.map(p => [p.title, p.category]))
+const formatDate = (iso: string | null) => {
+	const d = iso ? new Date(iso) : null
+	return d && !Number.isNaN(d.getTime())
+		? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+		: ''
+}
+
+const isCmsPost = /^\d+$/.test(props.id) === false
+
+// Full post (including body) fetched from the CMS when the id is a slug
+const { data: cmsPost } = useAsyncData(`post-${props.id}`, async () => {
+	if (!isCmsPost) return null
+	return await $fetch<any>(`${cmsBase}/api/sites/${cmsSite}/posts/${props.id}`).catch(() => null)
+})
+
+const allPosts = computed<Post[]>(() => {
+	if (!cmsPosts.value.length) return fallbackPosts
+	return cmsPosts.value.map((p, i) => ({
+		id: p.slug,
+		image: p.cover_image || `/images/blogs/blog${(i % 13) + 1}.png`,
+		category: categoryByTitle.get(p.title) ?? 'Design',
+		date: formatDate(p.published_at),
+		title: p.title,
+		author: p.author || 'Oluwaseun',
+		body: [],
+	}))
+})
+
+const post = computed<Post | undefined>(() => {
+	if (!isCmsPost) return fallbackPosts.find(p => p.id === Number(props.id))
+	const p = cmsPost.value
+	if (!p) return undefined
+	return {
+		id: p.slug,
+		image: p.cover_image || '/images/blogs/blog1.png',
+		category: categoryByTitle.get(p.title) ?? 'Design',
+		date: formatDate(p.published_at),
+		title: p.title,
+		author: p.author || 'Oluwaseun',
+		body: String(p.body ?? '').split('\n\n').map((s: string) => s.trim()).filter(Boolean),
+	}
+})
+
+// Count the visit (CMS posts only; throttled server-side, failures ignored)
+onMounted(() => {
+	if (isCmsPost) {
+		$fetch(`${cmsBase}/api/sites/${cmsSite}/posts/${props.id}/view`, { method: 'POST' }).catch(() => {})
+	}
+})
 
 // ── Tags per category ───────────────────────────────────────────────────────
 const categoryTags: Record<string, string[]> = {
@@ -146,20 +201,26 @@ const tags = computed(() => categoryTags[post.value?.category ?? ''] ?? ['web', 
 
 // ── Related (same category) & latest articles ───────────────────────────────
 const related = computed(() =>
-	posts.filter(p => p.id !== props.id && p.category === post.value?.category).slice(0, 4),
+	allPosts.value.filter(p => String(p.id) !== props.id && p.category === post.value?.category).slice(0, 4),
 )
 const latest = computed(() =>
-	posts.filter(p => p.id !== props.id).slice(-5).reverse(),
+	allPosts.value.filter(p => String(p.id) !== props.id).slice(-5).reverse(),
 )
 
 // ── Vote state ──────────────────────────────────────────────────────────────
 const vote = ref<'up' | 'down' | null>(null)
 const likes = ref(0)
+watch(cmsPost, (p) => {
+	if (p?.likes != null) likes.value = Number(p.likes)
+}, { immediate: true })
 
 const thumbUp = () => {
 	if (vote.value === 'up') { vote.value = null; likes.value--; return }
 	if (vote.value === 'down') vote.value = null
 	vote.value = 'up'; likes.value++
+	if (isCmsPost) {
+		$fetch(`${cmsBase}/api/sites/${cmsSite}/posts/${props.id}/like`, { method: 'POST' }).catch(() => {})
+	}
 }
 const thumbDown = () => {
 	if (vote.value === 'up') likes.value--
@@ -174,58 +235,70 @@ const comments = ref<{ name: string, text: string }[]>([
 const form = reactive({ name: '', text: '' })
 
 const onComment = () => { showComments.value = true }
+
+// Field names must match the "blog-comments" form in scripts/create-cms-forms.mjs
+const { submitCmsForm } = useCmsForms()
+const commentError = ref('')
+
 const addComment = () => {
-	if (!form.name.trim() || !form.text.trim()) return
-	comments.value.push({ name: form.name.trim(), text: form.text.trim() })
+	const name = form.name.trim()
+	const text = form.text.trim()
+	if (!name || !text) return
+	// Optimistic: comments are displayed from local state only (responses
+	// can't be read back from the CMS publicly).
+	comments.value.push({ name, text })
 	form.name = ''
 	form.text = ''
+	commentError.value = ''
+	submitCmsForm('blog-comments', {
+		post_slug: props.id,
+		post_title: post.value?.title ?? '',
+		name,
+		comment: text,
+	}).catch(() => { commentError.value = 'Comment shown locally but could not be saved.' })
 }
 
 const onMore = () => alert('Share, save, report…')
 
 // ── SEO / social meta (server-rendered) ─────────────────────────────────────
+// Reactive getters so the SSR-emitted tags reflect the async-fetched post
 const url = useRequestURL()
-watchEffect(() => {
-	const p = post.value
-	if (!p) {
-		useSeoMeta({ title: 'Post not found — Olux Studio' })
-		return
-	}
-	const absImage = url.origin + p.image
-	const pageUrl = `${url.origin}/blog/${p.id}`
-	const desc = p.body[0]
+const absImage = computed(() => post.value ? url.origin + post.value.image : '')
+const pageUrl = computed(() => post.value ? `${url.origin}/blog/${post.value.id}` : '')
+const desc = computed(() => post.value?.body[0] ?? '')
 
-	useSeoMeta({
-		title: `${p.title} — Olux Studio`,
-		description: desc,
-		ogTitle: p.title,
-		ogDescription: desc,
-		ogImage: absImage,
-		ogType: 'article',
-		ogUrl: pageUrl,
-		ogSiteName: 'Olux Studio',
-		twitterCard: 'summary_large_image',
-		twitterTitle: p.title,
-		twitterDescription: desc,
-		twitterImage: absImage,
-	})
-	useHead({
-		link: [{ rel: 'canonical', href: pageUrl }],
-		script: [{
-			type: 'application/ld+json',
-			innerHTML: JSON.stringify({
-				'@context': 'https://schema.org',
-				'@type': 'Article',
-				'headline': p.title,
-				'image': absImage,
-				'datePublished': p.date,
-				'author': { '@type': 'Person', 'name': p.author },
-				'publisher': { '@type': 'Organization', 'name': 'Olux Studio' },
-				'articleSection': p.category,
-				'mainEntityOfPage': pageUrl,
-			}),
-		}],
-	})
+useSeoMeta({
+	title: () => post.value ? `${post.value.title} — Olux Studio` : 'Post not found — Olux Studio',
+	description: () => desc.value,
+	ogTitle: () => post.value?.title ?? '',
+	ogDescription: () => desc.value,
+	ogImage: () => absImage.value,
+	ogType: 'article',
+	ogUrl: () => pageUrl.value,
+	ogSiteName: 'Olux Studio',
+	twitterCard: 'summary_large_image',
+	twitterTitle: () => post.value?.title ?? '',
+	twitterDescription: () => desc.value,
+	twitterImage: () => absImage.value,
+})
+useHead({
+	link: [{ rel: 'canonical', href: () => pageUrl.value }],
+	script: [{
+		type: 'application/ld+json',
+		innerHTML: () => post.value
+			? JSON.stringify({
+					'@context': 'https://schema.org',
+					'@type': 'Article',
+					'headline': post.value.title,
+					'image': absImage.value,
+					'datePublished': post.value.date,
+					'author': { '@type': 'Person', 'name': post.value.author },
+					'publisher': { '@type': 'Organization', 'name': 'Olux Studio' },
+					'articleSection': post.value.category,
+					'mainEntityOfPage': pageUrl.value,
+				})
+			: '',
+	}],
 })
 </script>
 
@@ -451,6 +524,10 @@ watchEffect(() => {
         &::placeholder { color: rgba(var(--color-text), 0.4); }
         &:focus { border-color: rgba(var(--color-primary), 0.6); }
         &--area { @apply resize-none; }
+    }
+    &__error {
+        @apply text-xs;
+        color: rgba(var(--color-text), 0.5);
     }
     &__submit {
         @apply flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold font-comforta uppercase tracking-wider transition-all duration-200;

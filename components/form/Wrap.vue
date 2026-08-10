@@ -27,7 +27,7 @@ const emit = defineEmits<{
     submit: [values: Record<string, any>, done: () => void, fail: () => void]
 }>()
 
-const { handleSubmit, setFieldValue, resetForm } = useForm({
+const { handleSubmit, setFieldValue, resetForm, setErrors } = useForm({
     validationSchema: props.schema,
 })
 
@@ -44,12 +44,15 @@ const onSubmit = handleSubmit(async (values) => {
             })
         }
         submitRef.value?.showSuccess()
-    } catch {
+    } catch (err) {
+        if (err instanceof CmsFormError && Object.keys(err.fieldErrors).length) {
+            setErrors(err.fieldErrors)
+        }
         submitRef.value?.showError()
     }
 })
 
-defineExpose({ setFieldValue, resetForm })
+defineExpose({ setFieldValue, resetForm, setErrors })
 </script>
 
 <style scoped lang="scss">

@@ -55,8 +55,9 @@ const menuStore = useMenuStore()
 const { theme } = useTheme()
 const themeClass = computed(() => `theme-${theme.value}`)
 const blogId = computed(() => {
-	const m = url.pathname.match(/^\/blog\/(\d+)/)
-	return m ? Number(m[1]) : null
+	// Numeric ids (fallback posts) or CMS slugs
+	const m = url.pathname.match(/^\/blog\/([\w-]+)/)
+	return m ? m[1] : null
 })
 const isBlogList = computed(() => /^\/blog\/?$/.test(url.pathname))
 const navBar = ref<HTMLElement | null>(null)

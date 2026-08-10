@@ -8,8 +8,8 @@ footer.site-footer
             //- Brand column
             div.footer-col(v-scroll-animate="'slide-up'" style="--anim-delay: 0ms")
                 NuxtLink(to="/")
-                    img.footer-logo(src="~/assets/images/systems/logo.svg" alt="Olux Studio")
-                p.footer-brand__tagline A specialist web design and development studio based in Blackburn, UK. We build fast, beautiful, purposeful websites for businesses that care about quality.
+                    img.footer-logo(src="~/assets/images/systems/logo.webp" alt="Olux Studio")
+                p.footer-brand__tagline {{ tagline }}
                 div.footer-social
                     a.footer-social__link(
                         v-for="s in socials"
@@ -68,7 +68,7 @@ const navigate = (path: string) => {
     menuStore.loadPage(path)
 }
 
-const socials = [
+const fallbackSocials = [
     { label: 'LinkedIn',  icon: 'bi-linkedin',  href: '#' },
     { label: 'GitHub',    icon: 'bi-github',    href: '#' },
     { label: 'Twitter/X', icon: 'bi-twitter-x', href: '#' },
@@ -85,7 +85,7 @@ const companyLinks = [
     { label: 'Contact',       href: '/contact'      },
 ]
 
-const serviceLinks = [
+const fallbackServiceLinks = [
     'Custom Website Design',
     'Responsive Development',
     'E-Commerce Solutions',
@@ -94,12 +94,26 @@ const serviceLinks = [
     'Ongoing Support',
 ]
 
-const contactInfo = [
+const fallbackContactInfo = [
     { icon: 'bi-envelope-fill',  label: 'Email',    value: 'contact@oluxstudio.com' },
     { icon: 'bi-telephone-fill', label: 'Phone',    value: '+44 78 2768 5736'       },
     { icon: 'bi-geo-alt-fill',   label: 'Location', value: 'Blackburn, Lancashire'  },
     { icon: 'bi-clock-fill',     label: 'Response', value: 'Within 1 working day'   },
 ]
+
+const { collection, attr } = useCmsContent()
+const socials = collection('socials', fallbackSocials, d => ({
+    label: String(d.label ?? ''),
+    icon: String(d.icon ?? ''),
+    href: String(d.href || '#'),
+}))
+const serviceLinks = collection('services', fallbackServiceLinks, d => String(d.header ?? ''))
+const contactInfo = collection('contact-info', fallbackContactInfo, d => ({
+    icon: String(d.icon ?? ''),
+    label: String(d.label ?? ''),
+    value: String(d.value ?? ''),
+}))
+const tagline = attr('footer_tagline', 'A specialist web design and development studio based in Blackburn, UK. We build fast, beautiful, purposeful websites for businesses that care about quality.')
 </script>
 
 <style scoped lang="scss">

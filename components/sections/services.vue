@@ -6,8 +6,8 @@ div
 
     //- Service cards / detail panel
     div.mt-20
-        h3.text-2xl.font-bold From first sketch to final click, we help your vision come alive online.
-        h1.section-header.my-6 What We Do
+        h3.text-2xl.font-bold {{ servicesIntro }}
+        h1.section-header.my-6 {{ servicesHeader }}
         div(ref="serviceRef")
         Transition(name="panel-swap" mode="out-in")
             //- Grid
@@ -53,9 +53,9 @@ div
             //- Pricing grid
             div(v-if="!selectedPlan" key="grid")
                 div.text-center.mb-14
-                    h3.section-label Simple, transparent pricing
-                    h1.section-header.my-4 Choose Your Plan
-                    p.text-foreground/60.max-w-xl.mx-auto Every project is different — pick the tier that fits, or reach out for a tailored quote.
+                    h3.section-label {{ pricingLabel }}
+                    h1.section-header.my-4 {{ pricingHeader }}
+                    p.text-foreground/60.max-w-xl.mx-auto {{ pricingSub }}
 
                 div.grid.grid-cols-1.gap-8(class="md:grid-cols-3")
                     div.pricing-card(
@@ -88,10 +88,10 @@ div
     div.cta-strip(v-scroll-animate="'fade'")
         div.cta-strip__inner
             div
-                h2.text-3xl.font-bold.font-comforta Got a project in mind?
-                p.text-maintext.mt-2 Let's talk about what we can build together.
+                h2.text-3xl.font-bold.font-comforta {{ ctaHeading }}
+                p.text-maintext.mt-2 {{ ctaBody }}
             div(@click="goToContact")
-                button.btn Get in touch
+                button.btn {{ ctaButton }}
 </template>
 
 <script setup lang="ts">
@@ -126,7 +126,7 @@ const goToContact = () => {
 	menuStore.loadPage('/contact')
 }
 
-const services: Service[] = [
+const fallbackServices: Service[] = [
 	{
 		icon: 'bi bi-laptop text-3xl text-primary',
 		header: 'Custom Website Design',
@@ -217,7 +217,7 @@ interface PricingPlan {
 	featured: boolean
 }
 
-const pricing: PricingPlan[] = [
+const fallbackPricing: PricingPlan[] = [
 	{
 		name: 'Starter',
 		price: '799',
@@ -264,6 +264,30 @@ const pricing: PricingPlan[] = [
 		featured: false,
 	},
 ]
+
+const { collection, attr } = useCmsContent()
+const servicesIntro = attr('services_intro', 'From first sketch to final click, we help your vision come alive online.')
+const servicesHeader = attr('services_header', 'What We Do')
+const pricingLabel = attr('pricing_label', 'Simple, transparent pricing')
+const pricingHeader = attr('pricing_header', 'Choose Your Plan')
+const pricingSub = attr('pricing_sub', 'Every project is different — pick the tier that fits, or reach out for a tailored quote.')
+const ctaHeading = attr('services_cta_heading', 'Got a project in mind?')
+const ctaBody = attr('services_cta_body', "Let's talk about what we can build together.")
+const ctaButton = attr('services_cta_button', 'Get in touch')
+const services = collection<Service>('services', fallbackServices, d => ({
+	icon: String(d.icon || 'bi bi-stars text-3xl text-primary'),
+	header: String(d.header ?? ''),
+	text: String(d.text ?? ''),
+	details: lines(d.details),
+}))
+const pricing = collection<PricingPlan>('pricing-plans', fallbackPricing, d => ({
+	name: String(d.name ?? ''),
+	price: String(d.price ?? ''),
+	description: String(d.description ?? ''),
+	features: lines(d.features),
+	cta: String(d.cta || 'Get started'),
+	featured: d.featured === true || d.featured === 'true' || d.featured === 1,
+}))
 </script>
 
 <style scoped lang="scss">

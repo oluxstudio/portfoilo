@@ -42,8 +42,10 @@ div.panel
                 div.field
                     label.field__label Selected package
                     input.field__input(type="text" :value="plan.name" disabled)
-                button.panel__submit(type="submit" :disabled="submitted")
-                    span(v-if="!submitted") Send enquiry
+                p.panel__form-error(v-if="errorMsg") {{ errorMsg }}
+                button.panel__submit(type="submit" :disabled="submitted || sending")
+                    span(v-if="sending") Sending…
+                    span(v-else-if="!submitted") Send enquiry
                     span(v-else)
                         i.bi.bi-check-lg
                         |  Sent! We'll be in touch.
@@ -60,7 +62,7 @@ interface PricingPlan {
 	featured: boolean
 }
 
-defineProps<{ plan: PricingPlan }>()
+const props = defineProps<{ plan: PricingPlan }>()
 defineEmits(['close'])
 
 const form = reactive({
@@ -72,9 +74,27 @@ const form = reactive({
 })
 
 const submitted = ref(false)
+const sending = ref(false)
+const errorMsg = ref('')
 
-const submit = () => {
-	submitted.value = true
+// Field names must match the "quote" form in scripts/create-cms-forms.mjs
+const { submitCmsForm } = useCmsForms()
+
+const submit = async () => {
+	sending.value = true
+	errorMsg.value = ''
+	try {
+		await submitCmsForm('quote', { ...form, plan: props.plan.name })
+		submitted.value = true
+	}
+	catch (err) {
+		errorMsg.value = err instanceof CmsFormError
+			? ((Object.values(err.fieldErrors).flat()[0] as string) ?? err.message)
+			: 'Something went wrong — please try again.'
+	}
+	finally {
+		sending.value = false
+	}
 }
 </script>
 
@@ -138,6 +158,9 @@ const submit = () => {
     }
     &__form-fields {
         @apply flex flex-col gap-4 mt-2;
+    }
+    &__form-error {
+        @apply text-red-400 text-sm font-comforta;
     }
     &__submit {
         @apply w-full py-3 rounded-xl bg-primary text-white font-bold font-comforta uppercase tracking-wider transition-all duration-200 mt-2;

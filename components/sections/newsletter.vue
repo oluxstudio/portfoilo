@@ -8,11 +8,11 @@ div
 
         //- Left: copy
         div.newsletter-copy(v-scroll-animate="'slide-right'")
-            span.feature-label Stay in the loop
-            h2.section-header  Web insights,
+            span.feature-label {{ nlLabel }}
+            h2.section-header  {{ nlHeading }}
                 br
-                span.text-primary  delivered weekly.
-            p.newsletter-copy__body Get practical articles on web design, development, and growing your business online — straight to your inbox. No spam, unsubscribe any time.
+                span.text-primary  {{ nlAccent }}
+            p.newsletter-copy__body {{ nlBody }}
             ul.newsletter-benefits
                 li(v-for="b in benefits" :key="b")
                     i.bi.bi-check-circle-fill
@@ -21,8 +21,8 @@ div
         //- Right: form
         div.newsletter-form-wrap(v-scroll-animate="'slide-left'")
             div.newsletter-form-card(v-if="!submitted")
-                h3.newsletter-form-card__title Join the newsletter
-                p.newsletter-form-card__sub Enter your details below to start receiving updates.
+                h3.newsletter-form-card__title {{ nlFormTitle }}
+                p.newsletter-form-card__sub {{ nlFormSub }}
 
                 Form.newsletter-form(
                     @submit="onSubmit"
@@ -31,7 +31,7 @@ div
                 )
                     div.flex.flex-col.gap-8
                         FormField(name="name"  label="Full Name"      type="text"  placeholder="Jane Smith"         required)
-                        FormField(name="email"  label="Email Address"      type="text"  placeholder="Jane Smith"         required)
+                        FormField(name="email"  label="Email Address"      type="email"  placeholder="jane@example.com"         required)
 
                     ButtonsSubmit(ref="submitButton" label="Subscribe")
 
@@ -56,12 +56,25 @@ const props = defineProps({
 	title: { type: String, required: true },
 })
 
-const benefits = [
+const fallbackBenefits = [
 	'Practical web design & dev tips',
 	'Studio project case studies',
 	'Industry news, curated weekly',
 	'Exclusive offers for subscribers',
 ]
+
+const { attr } = useCmsContent()
+const nlLabel = attr('newsletter_label', 'Stay in the loop')
+const nlHeading = attr('newsletter_heading', 'Web insights,')
+const nlAccent = attr('newsletter_heading_accent', 'delivered weekly.')
+const nlBody = attr('newsletter_body', 'Get practical articles on web design, development, and growing your business online — straight to your inbox. No spam, unsubscribe any time.')
+const nlFormTitle = attr('newsletter_form_title', 'Join the newsletter')
+const nlFormSub = attr('newsletter_form_sub', 'Enter your details below to start receiving updates.')
+const nlBenefits = attr('newsletter_benefits')
+const benefits = computed(() => {
+	const fromCms = lines(nlBenefits.value)
+	return fromCms.length ? fromCms : fallbackBenefits
+})
 
 const schema = yup.object({
 	name: yup.string().required('Please enter your name').min(2, 'Name is too short'),
@@ -71,15 +84,18 @@ const schema = yup.object({
 const submitButton = ref<any>(null)
 const submitted = ref(false)
 
-async function onSubmit(values: Record<string, string>) {
+// Field names must match the "newsletter" form in scripts/create-cms-forms.mjs
+const { submitCmsForm } = useCmsForms()
+
+async function onSubmit(values: Record<string, string>, { setErrors }: { setErrors: (errors: Record<string, string | string[]>) => void }) {
 	submitButton.value?.startLoading()
 	try {
-		await new Promise(resolve => setTimeout(resolve, 1200))
-		console.log('Newsletter signup:', values)
+		await submitCmsForm('newsletter', values)
 		submitButton.value?.showSuccess()
 		setTimeout(() => { submitted.value = true }, 800)
 	}
-	catch {
+	catch (err) {
+		if (err instanceof CmsFormError && Object.keys(err.fieldErrors).length) setErrors(err.fieldErrors)
 		submitButton.value?.showError()
 	}
 }

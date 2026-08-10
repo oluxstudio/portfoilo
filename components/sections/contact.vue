@@ -8,9 +8,9 @@ div
 
         //- Left: info
         div.contact-info
-            span.feature-label Let's talk
-            h2.section-header Have a project in mind? Let's build it.
-            p.contact-info__body Whether you have a brief ready or just an idea, we'd love to hear from you. Fill in the form and we'll get back to you within one working day.
+            span.feature-label {{ contactLabel }}
+            h2.section-header {{ contactHeading }}
+            p.contact-info__body {{ intro }}
 
             div.contact-tiles
                 div.contact-tile(v-for="tile in tiles" :key="tile.label")
@@ -66,19 +66,34 @@ const schema = yup.object({
 	message: yup.string().required('Message is required').min(20, 'Please write a bit more detail'),
 })
 
-const tiles = [
+const fallbackTiles = [
 	{ icon: 'bi-envelope-fill', label: 'Email', value: 'contact@oluxstudio.com' },
 	{ icon: 'bi-telephone-fill', label: 'Phone', value: '+44 78 2768 5736' },
 	{ icon: 'bi-geo-alt-fill', label: 'Location', value: 'Blackburn, Lancashire, UK' },
 	{ icon: 'bi-clock-fill', label: 'Response', value: 'Within 1 working day' },
 ]
 
-const socials = [
+const fallbackSocials = [
 	{ label: 'LinkedIn', icon: 'bi-linkedin', href: '#' },
 	{ label: 'GitHub', icon: 'bi-github', href: '#' },
 	{ label: 'Twitter/X', icon: 'bi-twitter-x', href: '#' },
 	{ label: 'Instagram', icon: 'bi-instagram', href: '#' },
 ]
+
+const { collection, attr } = useCmsContent()
+const tiles = collection('contact-info', fallbackTiles, d => ({
+	icon: String(d.icon ?? ''),
+	label: String(d.label ?? ''),
+	value: String(d.value ?? ''),
+}))
+const socials = collection('socials', fallbackSocials, d => ({
+	label: String(d.label ?? ''),
+	icon: String(d.icon ?? ''),
+	href: String(d.href || '#'),
+}))
+const intro = attr('contact_intro', 'Whether you have a brief ready or just an idea, we\'d love to hear from you. Fill in the form and we\'ll get back to you within one working day.')
+const contactLabel = attr('contact_label', "Let's talk")
+const contactHeading = attr('contact_heading', "Have a project in mind? Let's build it.")
 
 const submitted = ref(false)
 const formRef = ref<any>(null)
@@ -93,9 +108,11 @@ watch(subject, (val) => {
 	}, 300)
 })
 
+// Field names must match the "contact" form in scripts/create-cms-forms.mjs
+const { submitCmsForm } = useCmsForms()
+
 async function onSubmit(values: Record<string, string>) {
-	await new Promise(resolve => setTimeout(resolve, 1200))
-	console.log('Contact form submitted:', values)
+	await submitCmsForm('contact', values)
 	setTimeout(() => { submitted.value = true }, 600)
 }
 

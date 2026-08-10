@@ -6,7 +6,7 @@ div
 
     //- Intro
     div.mt-20.text-center.max-w-2xl.mx-auto(v-scroll-animate="'fade'")
-        p.text-lg.text-foreground/70.leading-8 A selection of projects we're proud of — from landing pages to full web applications. Each one built with purpose, precision, and care.
+        p.text-lg.text-foreground/70.leading-8 {{ intro }}
 
     //- Filter buttons
     div.filter-row.mt-10(v-scroll-animate="'slide-up'")
@@ -98,7 +98,7 @@ div
 const props = defineProps({ title: { type: String, required: true } })
 const { scrollToSection } = useScrollToSection()
 
-const categories = ['All Work', 'Web Design', 'E-Commerce', 'Branding', 'UI/UX', 'Development']
+const categories = computed(() => ['All Work', ...new Set(items.value.map(i => i.category).filter(Boolean))])
 const selectedCat = ref('All Work')
 const activeItem = ref<PortfolioItem | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
@@ -116,7 +116,7 @@ interface PortfolioItem {
 	url?: string
 }
 
-const items: PortfolioItem[] = [
+const fallbackItems: PortfolioItem[] = [
 	{
 		id: 1,
 		images: ['/images/portfolio/port1.png', '/images/portfolio/port2.png', '/images/portfolio/port3.png'],
@@ -209,8 +209,21 @@ const items: PortfolioItem[] = [
 	},
 ]
 
+const { collection, attr } = useCmsContent()
+const items = collection<PortfolioItem>('projects', fallbackItems, (d, item) => ({
+	id: item.id,
+	images: lines(d.images),
+	title: String(d.title ?? ''),
+	category: String(d.category ?? ''),
+	description: String(d.description ?? ''),
+	tech: lines(d.tech),
+	year: String(d.year ?? ''),
+	url: d.url ? String(d.url) : undefined,
+}))
+const intro = attr('portfolio_intro', 'A selection of projects we\'re proud of — from landing pages to full web applications. Each one built with purpose, precision, and care.')
+
 const filteredItems = computed(() =>
-	selectedCat.value === 'All Work' ? items : items.filter(i => i.category === selectedCat.value),
+	selectedCat.value === 'All Work' ? items.value : items.value.filter(i => i.category === selectedCat.value),
 )
 
 const openItem = (item: PortfolioItem) => {

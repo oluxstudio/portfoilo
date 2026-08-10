@@ -26,7 +26,7 @@ div
 
         //- Main
         div(class="flex-1 min-w-0")
-            h2.section-header.text-center(v-scroll-animate="'fade'") All Articles
+            h2.section-header.text-center(v-scroll-animate="'fade'") {{ articlesHeader }}
 
             //- Filter tabs
             div.filter-tabs(v-scroll-animate="'slide-up'")
@@ -83,7 +83,7 @@ div
             //- Newsletter
             div.sidebar-card(ref="newsletterRef")
                 div.sidebar-card__title Newsletter
-                p.sidebar-card__desc Subscribe to get web design insights and studio updates delivered weekly.
+                p.sidebar-card__desc {{ sidebarNewsletterDesc }}
                 div.mt-4(@click.prevent="scrollToNewsletter" style="cursor:pointer")
                     ButtonsFlipV2(front="Subscribe" back="Stay Informed")
 </template>
@@ -104,20 +104,20 @@ const categoryColors: Record<string, string> = {
 }
 const getCategoryColor = (cat: string) => categoryColors[cat] ?? '#6366f1'
 
-const openPost = (id: number) => window.open(`/blog/${id}`, '_blank')
+const openPost = (id: number | string) => window.open(`/blog/${id}`, '_blank')
 
-const topics = ['All', 'Design', 'Development', 'UI/UX', 'Business', 'Tutorial']
+const fallbackTopics = ['All', 'Design', 'Development', 'UI/UX', 'Business', 'Tutorial']
 const selectedTopic = ref('All')
 const sortOrder = ref('newest')
 
 const setTopic = (topic: string) => { selectedTopic.value = topic }
 
 interface Post {
-	id: number; image: string; category: string; date: string
+	id: number | string; image: string; category: string; date: string
 	title: string; excerpt: string; author: string
 }
 
-const allPosts: Post[] = [
+const fallbackPosts: Post[] = [
 	{ id: 1, image: '/images/blogs/blog1.png', category: 'Design', date: '12 May 2025', title: 'Why Custom Websites Outperform Templates Every Time', excerpt: 'Templates promise speed, but they trade your brand\'s uniqueness for convenience — businesses that invest in bespoke design consistently see stronger engagement and better conversion rates.', author: 'Oluwaseun' },
 	{ id: 2, image: '/images/blogs/blog2.png', category: 'UI/UX', date: '8 May 2025', title: '10 UI Design Trends Shaping the Web in 2025', excerpt: 'From glassmorphism to AI-assisted layouts, the visual web is evolving fast. We break down the ten trends worth paying attention to this year.', author: 'Oluwaseun' },
 	{ id: 3, image: '/images/blogs/blog3.png', category: 'Development', date: '3 May 2025', title: 'How Core Web Vitals Directly Affect Your Google Rankings', excerpt: 'Speed, interactivity, and visual stability are now official ranking signals. Here\'s what that means for your site and how to improve your scores.', author: 'Oluwaseun' },
@@ -133,10 +133,51 @@ const allPosts: Post[] = [
 	{ id: 13, image: '/images/blogs/blog13.png', category: 'Business', date: '24 Feb 2025', title: 'What to Look for When Hiring a Web Design Agency', excerpt: 'Not all agencies are equal. Here\'s the checklist we\'d use ourselves — covering portfolio quality, process transparency, and post-launch support.', author: 'Oluwaseun' },
 ]
 
+// CMS posts have no category — it lives in the `post-meta` collection, matched
+// by exact title; the fallback data's title map covers posts without meta.
+const categoryByTitle = new Map(fallbackPosts.map(p => [p.title, p.category]))
+
+const formatDate = (iso: string | null) => {
+	const d = iso ? new Date(iso) : null
+	return d && !Number.isNaN(d.getTime())
+		? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+		: ''
+}
+
+const { posts: cmsPosts, collection, attr } = useCmsContent()
+const articlesHeader = attr('blog_articles_header', 'All Articles')
+const sidebarNewsletterDesc = attr('blog_sidebar_newsletter_desc', 'Subscribe to get web design insights and studio updates delivered weekly.')
+const defaultAuthor = attr('blog_default_author', 'Oluwaseun')
+
+const postMeta = collection('post-meta', [], d => ({
+	title: String(d.title ?? ''),
+	category: String(d.category ?? ''),
+}))
+const cmsCategoryByTitle = computed(() => new Map(postMeta.value.map(m => [m.title, m.category])))
+
+const allPosts = computed<Post[]>(() => {
+	if (!cmsPosts.value.length) return fallbackPosts
+	return cmsPosts.value.map((p, i) => ({
+		id: p.slug,
+		image: p.cover_image || `/images/blogs/blog${(i % 13) + 1}.png`,
+		category: cmsCategoryByTitle.value.get(p.title) || categoryByTitle.get(p.title) || 'Design',
+		date: formatDate(p.published_at),
+		title: p.title,
+		excerpt: p.excerpt ?? '',
+		author: p.author || defaultAuthor.value,
+	}))
+})
+
+// Filter tabs follow the categories actually present in the posts.
+const topics = computed(() => {
+	const present = [...new Set(allPosts.value.map(p => p.category).filter(Boolean))]
+	return present.length ? ['All', ...present] : fallbackTopics
+})
+
 const filtered = computed(() => {
 	const posts = selectedTopic.value === 'All'
-		? allPosts
-		: allPosts.filter(p => p.category === selectedTopic.value)
+		? allPosts.value
+		: allPosts.value.filter(p => p.category === selectedTopic.value)
 	return sortOrder.value === 'oldest' ? [...posts].reverse() : posts
 })
 

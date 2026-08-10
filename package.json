@@ -12,7 +12,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "cms:provision": "node --env-file=.env scripts/provision-cms.mjs"
   },
   "dependencies": {
     "@fortawesome/free-brands-svg-icons": "^7.1.0",
