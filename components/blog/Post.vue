@@ -134,11 +134,18 @@ const fallbackPosts: Post[] = [
 	{ id: 13, image: '/images/blogs/blog13.png', category: 'Business', date: '24 Feb 2025', author: 'Oluwaseun', title: 'When to Rebuild vs When to Redesign Your Website', body: ['Knowing the difference can save you significant time and money.', 'A redesign changes the look and feel while keeping the structure intact.', 'A rebuild starts from scratch when technical debt is limiting you.', 'The only way to know which you need is an honest technical audit.'] },
 ]
 
-const { posts: cmsPosts } = useCmsContent()
+const { posts: cmsPosts, collection } = useCmsContent()
 const { public: { cmsBase, cmsSite } } = useRuntimeConfig()
 
-// CMS posts carry no category — recover it from the fallback data by title.
-const categoryByTitle = new Map(fallbackPosts.map(p => [p.title, p.category]))
+// CMS posts carry no category — it lives in the `post-meta` collection (matched
+// by exact title); the fallback data's title map covers posts without meta.
+const fallbackCategoryByTitle = new Map(fallbackPosts.map(p => [p.title, p.category]))
+const postMeta = collection('post-meta', [], d => ({
+	title: String(d.title ?? ''),
+	category: String(d.category ?? ''),
+}))
+const cmsCategoryByTitle = computed(() => new Map(postMeta.value.map(m => [m.title, m.category])))
+const categoryFor = (title: string) => cmsCategoryByTitle.value.get(title) || fallbackCategoryByTitle.get(title) || 'Design'
 const formatDate = (iso: string | null) => {
 	const d = iso ? new Date(iso) : null
 	return d && !Number.isNaN(d.getTime())
@@ -159,7 +166,7 @@ const allPosts = computed<Post[]>(() => {
 	return cmsPosts.value.map((p, i) => ({
 		id: p.slug,
 		image: p.cover_image || `/images/blogs/blog${(i % 13) + 1}.png`,
-		category: categoryByTitle.get(p.title) ?? 'Design',
+		category: categoryFor(p.title),
 		date: formatDate(p.published_at),
 		title: p.title,
 		author: p.author || 'Oluwaseun',
@@ -174,7 +181,7 @@ const post = computed<Post | undefined>(() => {
 	return {
 		id: p.slug,
 		image: p.cover_image || '/images/blogs/blog1.png',
-		category: categoryByTitle.get(p.title) ?? 'Design',
+		category: categoryFor(p.title),
 		date: formatDate(p.published_at),
 		title: p.title,
 		author: p.author || 'Oluwaseun',

@@ -13,7 +13,9 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "cms:provision": "node --env-file=.env scripts/provision-cms.mjs"
+    "cms:sync": "node --env-file=.env scripts/cms-sync.mjs",
+    "cms:provision": "node --env-file=.env scripts/cms-sync.mjs",
+    "cms:snapshot": "node --env-file=.env scripts/cms-snapshot.mjs"
   },
   "dependencies": {
     "@fortawesome/free-brands-svg-icons": "^7.1.0",

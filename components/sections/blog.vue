@@ -67,7 +67,7 @@ div
                     li(
                         v-for="topic in topics"
                         :key="topic"
-                        :class="{ 'topic-list__item--active': selectedTopic === tab }"
+                        :class="{ 'topic-list__item--active': selectedTopic === topic }"
                         class="topic-list__item"
                         @click="setTopic(topic)"
                     ) {{ topic }}

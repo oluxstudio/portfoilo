@@ -43,7 +43,7 @@ const fallbackCollage = [
 
 // ── CMS-driven copy via the "About Intro" page component ────────────────────
 const { componentNodes, collection } = useCmsContent()
-const intro = componentNodes('About Intro')
+const intro = componentNodes('section-about-intro')
 const introSubtitle = computed(() => intro.value.subtitle || 'From first sketch to final click, we help your vision come alive online.')
 const introHeadline = computed(() => intro.value.headline || 'Turning Bright Ideas into')
 const introAccent = computed(() => intro.value.accent || 'Beautiful Websites')

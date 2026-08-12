@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       cmsBase: 'https://cms.oluxstudio.com', // override: NUXT_PUBLIC_CMS_BASE
-      cmsSite: 'deve-site', // override: NUXT_PUBLIC_CMS_SITE
+      cmsSite: 'studio', // override: NUXT_PUBLIC_CMS_SITE
     },
   },
   app: {

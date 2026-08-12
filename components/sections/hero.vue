@@ -26,14 +26,15 @@ div.fit-content.pb-4(class="lg:pb-14 -mt-[98px]")
 const menuStore = useMenuStore()
 const { scrollToSection } = useScrollToSection()
 
-const { attr, collection } = useCmsContent()
-const headline = attr('hero_headline', 'Let me help you with your project')
-const cta = attr('hero_cta', "Let's Get Started")
-const sub = attr('hero_sub', 'I make the complex simple')
+// Copy comes from the "Hero" CMS page component; hardcoded values are the fallback.
+const { componentNodes, collection } = useCmsContent()
+const hero = componentNodes('section-hero')
+const headline = computed(() => hero.value.headline || 'Let me help you with your project')
+const cta = computed(() => hero.value.cta || "Let's Get Started")
+const sub = computed(() => hero.value.sub || 'I make the complex simple')
 const fallbackWords = ['Web Development', 'Mobile Apps', 'Digital Solutions', 'UI/UX Design', 'Branding', 'Automation']
-const heroWords = attr('hero_words')
 const words = computed(() => {
-	const fromCms = lines(heroWords.value)
+	const fromCms = lines(hero.value.words)
 	return fromCms.length ? fromCms : fallbackWords
 })
 

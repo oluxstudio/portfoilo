@@ -1,19 +1,18 @@
-#!/usr/bin/env node
 /**
- * Pushes this site's content and form definitions to the Olux CMS
- * (re-runnable). What it syncs:
- *   - forms        (create or update by name)
- *   - collections  (create by slug; seed items only when the collection is empty)
- *   - posts        (create only titles that don't exist yet)
- *   - page "/" attributes (hero + section copy)
+ * cms-manifest.mjs — the single declarative source of truth for this site's
+ * CMS content. `cms-sync.mjs` pushes everything here to a CMS (idempotent);
+ * `cms-snapshot.mjs` pulls the CMS back down into public/site-content.json.
  *
- * The app then pulls everything back through GET /api/sites/{site}/... —
- * see server/api/site-data.get.ts.
- *
- * Usage:
- *   npm run cms:provision       # reads CMS_BASE / CMS_SITE / CMS_API_TOKEN from .env
- *   node scripts/provision-cms.mjs --base=http://localhost:8000 --site=deve-site --token=XXX
+ * Naming convention (how to identify each object type at a glance):
+ *   components   section-<name>            e.g. section-hero, section-about-intro
+ *   collections  plural kebab slug, section-scoped when section-specific
+ *                e.g. services, about → stats/team/collage, blog → post-meta
+ *   posts        slug (auto-generated from the title)
+ *   assets       <section>-<purpose>-<n>.<ext>   e.g. blog-cover-1.png
+ *   forms        plain form name matched by the submitting component
+ *                e.g. contact, newsletter, quote, blog-comments
  */
+
 
 // ── Forms ───────────────────────────────────────────────────────────────────
 // Field keys are the source of truth — components submit payloads whose keys
@@ -387,166 +386,48 @@ const PAGE_ATTRIBUTES = {
 	footer_tagline: 'A specialist web design and development studio based in Blackburn, UK. We build fast, beautiful, purposeful websites for businesses that care about quality.',
 }
 
-// ── Runner ──────────────────────────────────────────────────────────────────
 
-function arg(name) {
-	const match = process.argv.find(a => a.startsWith(`--${name}=`))
-	return match?.slice(name.length + 3)
-}
+// ── Components (named bags of typed nodes, attached to a page) ──────────────
+// Node types: text, url, image, number, boolean, color, collection.
+// `renameFrom` lets cms-sync migrate pre-convention names instead of duplicating.
 
-const base = arg('base') ?? process.env.CMS_BASE ?? 'http://localhost:8000'
-const site = arg('site') ?? process.env.CMS_SITE ?? 'deve-site'
-const token = arg('token') ?? process.env.CMS_API_TOKEN
+const COMPONENTS = [
+	{
+		name: 'section-hero',
+		renameFrom: ['Hero'],
+		description: 'Hero section copy',
+		page: '/',
+		nodes: [
+			{ label: 'headline', type: 'text', value: 'Let me help you with your project' },
+			{ label: 'sub', type: 'text', value: 'I make the complex simple' },
+			{ label: 'words', type: 'text', value: 'Web Development\nMobile Apps\nDigital Solutions\nUI/UX Design\nBranding\nAutomation' },
+			{ label: 'cta', type: 'text', value: 'Let\'s Get Started' },
+		],
+	},
+	{
+		name: 'section-about-intro',
+		renameFrom: ['About Intro'],
+		description: 'Intro block of the About section',
+		page: '/',
+		nodes: [
+			{ label: 'subtitle', type: 'text', value: 'From first sketch to final click, we help your vision come alive online.' },
+			{ label: 'headline', type: 'text', value: 'Turning Bright Ideas into' },
+			{ label: 'accent', type: 'text', value: 'Beautiful Websites' },
+			{ label: 'body', type: 'text', value: 'A modern web studio is a creative and technical partner that designs and builds high-quality, custom digital experiences. We\'re a small, specialised team focused on creating websites and digital products that are visually striking, high-performing, and conversion-driven.' },
+			{ label: 'cta', type: 'text', value: 'See our services' },
+		],
+	},
+]
 
-if (!token) {
-	console.error('CMS_API_TOKEN is required (set it in .env or pass --token=...)')
-	process.exit(1)
-}
+// ── Assets (uploaded to the CMS media library) ──────────────────────────────
+// `file` is repo-relative; `renameFrom` migrates earlier upload names;
+// `use.post` re-points that post's cover_image at the uploaded asset's URL.
 
-const api = `${base}/api/sites/${site}`
-const headers = {
-	'Content-Type': 'application/json',
-	'Accept': 'application/json',
-	'Authorization': `Bearer ${token}`,
-}
+const ASSETS = POSTS.map((post, i) => ({
+	name: `blog-cover-${i + 1}.png`,
+	renameFrom: [`blog${i + 1}.png`],
+	file: `public/images/blogs/blog${i + 1}.png`,
+	use: { post: post.title },
+}))
 
-async function readBody(res) {
-	const text = await res.text()
-	try {
-		return JSON.parse(text)
-	}
-	catch {
-		return { message: text.slice(0, 200) }
-	}
-}
-
-let failed = false
-
-function fail(label, res, body) {
-	failed = true
-	console.error(`  ✘ FAILED   ${label} — ${res.status} ${body.message ?? ''}`)
-	if (body.errors) console.error('    ' + JSON.stringify(body.errors))
-}
-
-// ── Forms ──
-async function syncForms() {
-	console.log(`\nForms → ${api}/forms`)
-	for (const form of FORMS) {
-		let res = await fetch(`${api}/forms`, { method: 'POST', headers, body: JSON.stringify(form) })
-		let body = await readBody(res)
-		let action = 'created'
-		if (res.status === 422 && (body.message ?? '').includes('already exists')) {
-			res = await fetch(`${api}/forms/${form.name}`, { method: 'PATCH', headers, body: JSON.stringify(form) })
-			body = await readBody(res)
-			action = 'updated'
-		}
-		if (res.ok) console.log(`  ✔ ${action}  ${form.name}`)
-		else fail(form.name, res, body)
-	}
-}
-
-// ── Collections ──
-async function syncCollections() {
-	console.log(`\nCollections → ${api}/collections`)
-	const listRes = await fetch(`${api}/collections`, { headers })
-	const existing = (await readBody(listRes)).collections ?? []
-
-	for (const def of COLLECTIONS) {
-		let col = existing.find(c => c.slug === def.name || c.name === def.name)
-		if (!col) {
-			const res = await fetch(`${api}/collections`, {
-				method: 'POST',
-				headers,
-				body: JSON.stringify({ name: def.name, type: def.type, description: def.description, fields: def.fields, is_public: true }),
-			})
-			const body = await readBody(res)
-			if (!res.ok) {
-				fail(def.name, res, body)
-				continue
-			}
-			col = body.collection
-			console.log(`  ✔ created  ${def.name}`)
-		}
-		else {
-			console.log(`  · exists   ${def.name}`)
-		}
-
-		// Seed items only when the collection is empty (idempotent reruns).
-		if ((col.items ?? []).length > 0) continue
-		let seeded = 0
-		for (const data of def.items) {
-			const res = await fetch(`${api}/collections/${col.id}/items`, {
-				method: 'POST',
-				headers,
-				body: JSON.stringify({ data, status: 'published' }),
-			})
-			if (res.ok) seeded++
-			else fail(`${def.name} item`, res, await readBody(res))
-		}
-		if (seeded) console.log(`    ↳ seeded ${seeded}/${def.items.length} items`)
-	}
-}
-
-// ── Posts ──
-async function syncPosts() {
-	console.log(`\nPosts → ${api}/posts`)
-	const listRes = await fetch(`${api}/posts?per_page=100`, { headers })
-	const existingTitles = new Set(((await readBody(listRes)).posts ?? []).map(p => p.title))
-
-	let created = 0
-	for (const post of POSTS) {
-		if (existingTitles.has(post.title)) continue
-		const res = await fetch(`${api}/posts`, {
-			method: 'POST',
-			headers,
-			body: JSON.stringify({
-				title: post.title,
-				excerpt: post.excerpt,
-				body: post.body.join('\n\n'),
-				cover_image: post.cover_image,
-				status: 'published',
-				published_at: post.published_at,
-			}),
-		})
-		if (res.ok) created++
-		else fail(post.title, res, await readBody(res))
-	}
-	console.log(`  ✔ created ${created} posts (${POSTS.length - created} already existed)`)
-}
-
-// ── Page attributes ──
-async function syncPageAttributes() {
-	console.log(`\nPage "/" attributes → ${api}/pages`)
-	const listRes = await fetch(`${api}/pages`, { headers })
-	const pages = (await readBody(listRes)).pages ?? []
-	let home = pages.find(p => p.url === '/')
-	if (!home) {
-		const createRes = await fetch(`${api}/pages`, {
-			method: 'POST',
-			headers,
-			body: JSON.stringify({ name: 'Home', url: '/', is_published: true }),
-		})
-		const createBody = await readBody(createRes)
-		if (!createRes.ok) {
-			fail('create page "/"', createRes, createBody)
-			return
-		}
-		home = createBody.page
-		console.log('  ✔ created  page "/" (Home)')
-	}
-	const res = await fetch(`${api}/pages/${home.id}`, {
-		method: 'PATCH',
-		headers,
-		body: JSON.stringify({ attributes: PAGE_ATTRIBUTES }),
-	})
-	if (res.ok) console.log(`  ✔ set ${Object.keys(PAGE_ATTRIBUTES).length} attributes on page "${home.name}"`)
-	else fail('page attributes', res, await readBody(res))
-}
-
-console.log(`Provisioning CMS site "${site}" at ${base}`)
-await syncForms()
-await syncCollections()
-await syncPosts()
-await syncPageAttributes()
-console.log(failed ? '\nDone with errors.' : '\nDone.')
-process.exit(failed ? 1 : 0)
+export { FORMS, COLLECTIONS, POSTS, PAGE_ATTRIBUTES, COMPONENTS, ASSETS }
