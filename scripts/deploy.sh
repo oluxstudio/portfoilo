@@ -55,8 +55,25 @@ log "Building ($(git rev-parse --short HEAD))"
 npm run build
 
 # ── 4 · Restart ─────────────────────────────────────────────────────────────
+# Free the port first: kill any process holding it that ISN'T the pm2-managed
+# app (orphaned manual/nohup starts). Otherwise pm2 crash-loops on EADDRINUSE
+# while the stale process keeps serving the old build.
+free_port() {
+	local pm2_pid=""
+	command -v pm2 >/dev/null 2>&1 && pm2_pid="$(pm2 pid "$APP_NAME" 2>/dev/null | tr -d '[:space:]')"
+	for pid in $(ss -ltnp 2>/dev/null | grep ":$PORT " | grep -oP 'pid=\K[0-9]+' | sort -u); do
+		if [[ "$pid" != "$pm2_pid" ]]; then
+			echo "Killing stray process $pid holding port $PORT"
+			kill "$pid" 2>/dev/null || true
+			sleep 1
+			kill -9 "$pid" 2>/dev/null || true
+		fi
+	done
+}
+
 if command -v pm2 >/dev/null 2>&1; then
 	log "Restarting via pm2 ($APP_NAME)"
+	free_port
 	if pm2 describe "$APP_NAME" >/dev/null 2>&1; then
 		pm2 restart "$APP_NAME" --update-env
 	else
@@ -70,8 +87,21 @@ else
 	log "No pm2/systemd found — restarting with nohup"
 	pkill -f ".output/server/index.mjs" 2>/dev/null || true
 	sleep 1
+	free_port
 	nohup env PORT="$PORT" node .output/server/index.mjs >> deploy-app.log 2>&1 &
 	echo "Started (logs: deploy-app.log)"
+fi
+
+# The health check must be answered by the process we just started — not a
+# survivor. Verify the port's owner is the expected one.
+if command -v pm2 >/dev/null 2>&1; then
+	sleep 2
+	owner="$(ss -ltnp 2>/dev/null | grep ":$PORT " | grep -oP 'pid=\K[0-9]+' | head -1)"
+	expected="$(pm2 pid "$APP_NAME" 2>/dev/null | tr -d '[:space:]')"
+	if [[ -n "$owner" && -n "$expected" && "$owner" != "$expected" ]]; then
+		echo "✘ Port $PORT is owned by PID $owner, not the pm2 app ($expected) — a stray process won the port" >&2
+		exit 1
+	fi
 fi
 
 # ── 5 · Health check ────────────────────────────────────────────────────────
